@@ -345,40 +345,47 @@ function ExpenseTracker() {
                     mb: 3
                   }}
                 >
-                  Items
+                  Transactions:
                 </Typography>
                 <List>
                   {expenses.map((expense) => (
                     <ListItem 
                       key={expense.id}
-                      sx={{
-                        transition: 'all 0.2s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateX(4px)',
-                          bgcolor: 'action.hover',
-                          borderRadius: 1
-                        }
-                      }}
-                    >
-                      <ListItemText
-                        primary={expense.description}
-                        secondary={`${expense.type === 'income' ? '+' : '-'}$${expense.amount.toFixed(2)} - ${expense.date}${expense.is_recurring ? ' (Recurring)' : ''}`}
-                      />
-                      <ListItemSecondaryAction>
+                      secondaryAction={
                         <IconButton 
                           edge="end" 
+                          aria-label="delete"
                           onClick={() => handleDelete(expense.id)}
+                          disabled={!isConnected}
                           sx={{
                             transition: 'all 0.2s ease-in-out',
                             '&:hover': {
-                              transform: 'scale(1.1)',
-                              color: 'error.main'
+                              color: 'error.main',
+                              transform: 'scale(1.1)'
                             }
                           }}
                         >
                           <DeleteIcon />
                         </IconButton>
-                      </ListItemSecondaryAction>
+                      }
+                      sx={{
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
+                          backgroundColor: 'action.hover'
+                        }
+                      }}
+                    >
+                      <ListItemText
+                        primary={expense.description}
+                        secondary={`Amount: $${expense.amount.toFixed(2)} - Date: ${expense.date}`}
+                        primaryTypographyProps={{ fontWeight: 500 }}
+                        secondaryTypographyProps={{
+                          color: expense.type === 'income' ? 'success.dark' : 'error.dark',
+                          fontWeight: 'bold'
+                        }}
+                      />
                     </ListItem>
                   ))}
                 </List>
