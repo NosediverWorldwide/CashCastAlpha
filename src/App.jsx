@@ -349,7 +349,7 @@ function App() {
                     </Paper>
 
                     <Paper sx={{ p: 3 }}>
-                      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>Items</Typography>
+                      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>Transactions:</Typography>
                       <List sx={{ p: 0 }}> 
                         {expenses.map((expense) => (
                           <ListItem 
@@ -361,7 +361,13 @@ function App() {
                                 aria-label="delete" 
                                 onClick={() => handleDelete(expense.id)} 
                                 disabled={!isConnected} 
-                                sx={{ mr: 1 }}
+                                sx={{ 
+                                  mr: 1,
+                                  transition: 'color 0.2s',
+                                  '&:hover': {
+                                    color: '#f44336' // Red color on hover
+                                  }
+                                }}
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -370,18 +376,23 @@ function App() {
                             <ListItemText 
                               sx={{ pl: 2 }}
                               primary={expense.description}
-                              secondary={`$${(Number(expense.amount) || 0).toFixed(2)} - ${expense.date}`}
+                              secondary={
+                                <>
+                                  <Box component="span" sx={{ color: expense.type === 'income' ? theme.palette.success.main : theme.palette.error.main, fontWeight: 'bold' }}>
+                                    ${(Number(expense.amount) || 0).toFixed(2)}
+                                  </Box>
+                                  <Box component="span" sx={{ color: '#b8b8b8', ml: 1 }}>
+                                    {expense.date}
+                                  </Box>
+                                </>
+                              }
                               primaryTypographyProps={{ fontWeight: 'bold' }}
-                              secondaryTypographyProps={{ 
-                                color: expense.type === 'income' ? theme.palette.success.main : theme.palette.error.main, 
-                                fontWeight: 'bold' 
-                              }}
                             />
                           </ListItem>
                         ))}
                         {expenses.length === 0 && (
                           <ListItem disablePadding>
-                            <ListItemText sx={{ pl: 2 }} primary="No items yet." />
+                            <ListItemText sx={{ pl: 2 }} primary="No transactions yet." />
                           </ListItem>
                         )}
                       </List>

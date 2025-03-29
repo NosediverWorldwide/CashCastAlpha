@@ -3,6 +3,8 @@ import { Paper, Typography, Grid, Box, Tooltip, Fade, IconButton } from '@mui/ma
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, parseISO, isSameDay, isBefore, compareAsc, isAfter } from 'date-fns';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 // Helper to parse date safely
 const safeParseISO = (dateString) => {
@@ -16,6 +18,7 @@ const safeParseISO = (dateString) => {
 
 function Calendar({ expenses }) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [expanded, setExpanded] = useState(true);
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December'];
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -30,6 +33,10 @@ function Calendar({ expenses }) {
 
   const handleNextMonth = () => {
     setCurrentDate(addMonths(currentDate, 1));
+  };
+
+  const toggleExpanded = () => {
+    setExpanded(!expanded);
   };
 
   const getExpensesForDay = (calendarDate) => {
@@ -155,116 +162,133 @@ function Calendar({ expenses }) {
         display: { xs: 'none', md: 'block' },
       }}
     >
-      <Typography 
-        variant="h6" 
-        gutterBottom
-        sx={{
-          fontWeight: 600,
-          color: 'primary.main',
-          mb: 3
-        }}
-      >
-        <IconButton onClick={handlePrevMonth} size="small">
-          <ArrowBackIosNewIcon fontSize="inherit" />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: expanded ? 3 : 0 }}>
+        <Typography 
+          variant="h6" 
+          gutterBottom
+          sx={{
+            fontWeight: 600,
+            color: 'primary.main',
+            mb: 0
+          }}
+        >
+          <IconButton onClick={handlePrevMonth} size="small">
+            <ArrowBackIosNewIcon fontSize="inherit" />
+          </IconButton>
+          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          <IconButton onClick={handleNextMonth} size="small">
+            <ArrowForwardIosIcon fontSize="inherit" />
+          </IconButton>
+        </Typography>
+        <IconButton 
+          onClick={toggleExpanded}
+          sx={{ 
+            transition: 'transform 0.3s',
+            transform: expanded ? 'rotate(0deg)' : 'rotate(180deg)',
+            border: '2px solid #111',
+            '&:hover': {
+              backgroundColor: 'rgba(0,0,0,0.05)'
+            }
+          }}
+        >
+          {expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
-        {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-        <IconButton onClick={handleNextMonth} size="small">
-          <ArrowForwardIosIcon fontSize="inherit" />
-        </IconButton>
-      </Typography>
+      </Box>
 
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(7, 1fr)',
-        gap: 1,
-        width: '100%',
-        maxWidth: '100%',
-        overflow: 'hidden'
-      }}>
-        {/* Day headers */}
-        {days.map(day => (
-          <Box
-            key={day}
-            sx={{
-              p: 1,
-              textAlign: 'center',
-              fontWeight: 'bold',
-              backgroundColor: 'primary.main',
-              color: 'white',
-              borderRadius: 0,
-              width: '100%',
-              border: '2px solid #111',
-            }}
-          >
-            {day}
-          </Box>
-        ))}
-
-        {/* Empty cells for days before the first of the month */}
-        {Array.from({ length: firstDayOfMonth.getDay() }, (_, i) => (
-          <Box key={`empty-${i}`} sx={{ ...cellStyle, backgroundColor: 'background.paper' }} />
-        ))}
-        
-        {/* Days of the month */}
-        {daysInMonth.map((date, index) => {
-          const dayExpenses = getExpensesForDay(date);
-          const dailyTotal = calculateDayTotal(dayExpenses);
-          let displayAmount = dailyTotal;
-
-          if (isToday(date)) {
-            displayAmount = calculateAvailableToSpend(date, expenses);
-          }
-          
-          return (
-            <Tooltip 
-              key={date.toISOString()}
-              title={getTooltipContent(date, dayExpenses)}
-              arrow
-              placement="top"
-              TransitionComponent={Fade}
-              componentsProps={{
-                tooltip: {
-                  sx: {
-                    bgcolor: '#7E8083',
-                    '& .MuiTooltip-arrow': {
-                      color: '#7E8083',
-                    },
-                  },
-                },
+      {expanded && (
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 1,
+          width: '100%',
+          maxWidth: '100%',
+          overflow: 'hidden'
+        }}>
+          {/* Day headers */}
+          {days.map(day => (
+            <Box
+              key={day}
+              sx={{
+                p: 1,
+                textAlign: 'center',
+                fontWeight: 'bold',
+                backgroundColor: 'primary.main',
+                color: 'white',
+                borderRadius: 0,
+                width: '100%',
+                border: '2px solid #111',
               }}
             >
-              <Box 
-                sx={{ 
-                  ...cellStyle,
-                  backgroundColor: isToday(date) ? '#1976d2' : getDayBackgroundColor(dayExpenses),
-                  opacity: isSameMonth(date, currentDate) ? 1 : 0.5
+              {day}
+            </Box>
+          ))}
+
+          {/* Empty cells for days before the first of the month */}
+          {Array.from({ length: firstDayOfMonth.getDay() }, (_, i) => (
+            <Box key={`empty-${i}`} sx={{ ...cellStyle, backgroundColor: 'background.paper' }} />
+          ))}
+          
+          {/* Days of the month */}
+          {daysInMonth.map((date, index) => {
+            const dayExpenses = getExpensesForDay(date);
+            const dailyTotal = calculateDayTotal(dayExpenses);
+            let displayAmount = dailyTotal;
+
+            if (isToday(date)) {
+              displayAmount = calculateAvailableToSpend(date, expenses);
+            }
+            
+            return (
+              <Tooltip 
+                key={date.toISOString()}
+                title={getTooltipContent(date, dayExpenses)}
+                arrow
+                placement="top"
+                TransitionComponent={Fade}
+                componentsProps={{
+                  tooltip: {
+                    sx: {
+                      bgcolor: '#7E8083',
+                      '& .MuiTooltip-arrow': {
+                        color: '#7E8083',
+                      },
+                    },
+                  },
                 }}
               >
-                <Typography 
-                  variant="subtitle2" 
+                <Box 
                   sx={{ 
-                    fontWeight: 'bold',
-                    color: isToday(date) ? 'white' : 'text.primary'
+                    ...cellStyle,
+                    backgroundColor: isToday(date) ? '#1976d2' : getDayBackgroundColor(dayExpenses),
+                    opacity: isSameMonth(date, currentDate) ? 1 : 0.5
                   }}
                 >
-                  {format(date, 'd')}
-                </Typography>
-                {(isToday(date) || dayExpenses.length > 0) && (
                   <Typography 
-                    variant="body2" 
+                    variant="subtitle2" 
                     sx={{ 
                       fontWeight: 'bold',
-                      color: isToday(date) ? 'white' : (dailyTotal >= 0 ? 'success.dark' : 'error.dark')
+                      color: isToday(date) ? 'white' : 'text.primary'
                     }}
                   >
-                    {isToday(date) ? `Available: $${displayAmount.toFixed(2)}` : `$${dailyTotal.toFixed(2)}`}
+                    {format(date, 'd')}
                   </Typography>
-                )}
-              </Box>
-            </Tooltip>
-          );
-        })}
-      </Box>
+                  {(isToday(date) || dayExpenses.length > 0) && (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: isToday(date) ? 'white' : (dailyTotal >= 0 ? 'success.dark' : 'error.dark')
+                      }}
+                    >
+                      {isToday(date) ? `Available: $${displayAmount.toFixed(2)}` : `$${dailyTotal.toFixed(2)}`}
+                    </Typography>
+                  )}
+                </Box>
+              </Tooltip>
+            );
+          })}
+        </Box>
+      )}
     </Paper>
   );
 }
