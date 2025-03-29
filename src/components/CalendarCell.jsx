@@ -33,7 +33,6 @@ function CalendarCell({
 }) {
   return (
     <Tooltip 
-      key={date.toISOString()}
       title={getTooltipContent(date, dayExpenses)}
       arrow
       placement="top"
@@ -41,9 +40,13 @@ function CalendarCell({
       componentsProps={{
         tooltip: {
           sx: {
-            bgcolor: '#7E8083',
+            bgcolor: 'white',
+            color: 'text.primary',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+            border: '1px solid #ddd',
+            maxWidth: 'none',
             '& .MuiTooltip-arrow': {
-              color: '#7E8083',
+              color: 'white',
             },
           },
         },
@@ -73,7 +76,7 @@ function CalendarCell({
               color: isToday(date) ? 'white' : (dailyTotal >= 0 ? 'success.dark' : 'error.dark')
             }}
           >
-            {isToday(date) ? `Available: $${displayAmount.toFixed(2)}` : `$${dailyTotal.toFixed(2)}`}
+            {isToday(date) ? `$${displayAmount.toFixed(2)}` : `$${dailyTotal.toFixed(2)}`}
           </Typography>
         )}
       </Box>

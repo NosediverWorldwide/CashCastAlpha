@@ -39,6 +39,11 @@ function Calendar({ expenses }) {
     setExpanded(!expanded);
   };
 
+  // Custom function to pass all expenses to the tooltip content
+  const getTooltipWithAllExpenses = (date, dayExpenses) => {
+    return getTooltipContent(date, dayExpenses, expenses);
+  };
+
   return (
     <Paper 
       sx={{ 
@@ -131,7 +136,7 @@ function Calendar({ expenses }) {
                 dayExpenses={dayExpenses}
                 dailyTotal={dailyTotal}
                 displayAmount={displayAmount}
-                getTooltipContent={(date, expenses) => getTooltipContent(date, expenses)}
+                getTooltipContent={(date, expenses) => getTooltipWithAllExpenses(date, expenses)}
                 isDateToday={isToday}
                 getDayBackgroundColor={getDayBackgroundColor}
               />
