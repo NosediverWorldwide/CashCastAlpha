@@ -13,7 +13,7 @@ import {
   calculateAvailableToSpend,
   getDayBackgroundColor,
   getTooltipContent
-} from './CalendarUtils';
+} from './CalendarUtils.jsx';
 import CalendarCell, { cellStyle } from './CalendarCell';
 
 function Calendar({ expenses }) {

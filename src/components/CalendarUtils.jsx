@@ -1,4 +1,5 @@
 import { parseISO, isSameDay, compareAsc, isAfter, isBefore } from 'date-fns';
+import React from 'react';
 
 // Helper to parse date safely
 export const safeParseISO = (dateString) => {
