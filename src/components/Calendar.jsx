@@ -131,9 +131,9 @@ function Calendar({ expenses }) {
   const cellStyle = {
     p: 2,
     height: 120,
-    border: '1px solid',
-    borderColor: 'divider',
-    borderRadius: 1,
+    border: '2px solid #111',
+    borderColor: '#111',
+    borderRadius: 0,
     display: 'flex',
     flexDirection: 'column',
     gap: 1,
@@ -142,7 +142,7 @@ function Calendar({ expenses }) {
     transition: 'all 0.2s ease-in-out',
     '&:hover': {
       transform: 'scale(1.02)',
-      boxShadow: 2,
+      boxShadow: '4px 4px 0px #111',
       zIndex: 1
     }
   };
@@ -152,12 +152,7 @@ function Calendar({ expenses }) {
       sx={{ 
         p: 3, 
         mb: 3, 
-        boxShadow: 3,
         display: { xs: 'none', md: 'block' },
-        transition: 'all 0.3s ease-in-out',
-        '&:hover': {
-          boxShadow: 6
-        }
       }}
     >
       <Typography 
@@ -196,12 +191,9 @@ function Calendar({ expenses }) {
               fontWeight: 'bold',
               backgroundColor: 'primary.main',
               color: 'white',
-              borderRadius: 1,
+              borderRadius: 0,
               width: '100%',
-              transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                backgroundColor: 'primary.dark'
-              }
+              border: '2px solid #111',
             }}
           >
             {day}

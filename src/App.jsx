@@ -26,7 +26,10 @@ import {
   Checkbox,
   Select,
   FormControl,
-  InputLabel
+  InputLabel,
+  createTheme,
+  ThemeProvider,
+  CssBaseline
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -38,6 +41,103 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Calendar from './components/Calendar';
 import { Fade } from '@mui/material';
+
+// Define a Neo-Brutalist theme subset
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: { main: '#1976d2' },
+    secondary: { main: '#dc004e' },
+    background: { default: '#f5f5f5', paper: '#ffffff' },
+    text: { primary: '#111111' },
+    success: { main: '#4caf50' }, 
+    error: { main: '#f44336' },
+    info: { main: '#2196f3' },
+    warning: { main: '#ff9800' },
+  },
+  typography: {
+    fontFamily: '"Inter", system-ui, Avenir, Helvetica, Arial, sans-serif',
+    button: { textTransform: 'none', fontWeight: 'bold' }
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          border: '2px solid #111',
+          borderRadius: 0,
+          boxShadow: '4px 4px 0px #111',
+        }
+      }
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+          border: '2px solid #111',
+          boxShadow: '2px 2px 0px #111',
+          transition: 'transform 0.1s ease-in-out, boxShadow 0.1s ease-in-out',
+          '&:hover': {
+            transform: 'translate(-1px, -1px)',
+            boxShadow: '3px 3px 0px #111',
+          },
+          '&:active': {
+            transform: 'translate(1px, 1px)',
+            boxShadow: '1px 1px 0px #111',
+          }
+        },
+        containedPrimary: { backgroundColor: '#1976d2', color: '#fff', '&:hover': { backgroundColor: '#1565c0' } },
+        containedSecondary: { backgroundColor: '#dc004e', color: '#fff', '&:hover': { backgroundColor: '#9a0036' } }
+      }
+    },
+    MuiTextField: {
+        styleOverrides: {
+            root: {
+                '& .MuiOutlinedInput-root': {
+                    borderRadius: 0,
+                    borderWidth: '2px',
+                    borderColor: '#111',
+                    '& fieldset': { border: '2px solid #111' },
+                     '&:hover fieldset': { borderColor: '#111' },
+                    '&.Mui-focused fieldset': { borderColor: '#111', borderWidth: '2px' },
+                },
+            }
+        }
+    },
+    MuiListItem: {
+        styleOverrides: {
+            root: {
+                borderBottom: '2px solid #111',
+                borderRadius: 0,
+                paddingTop: '12px',
+                paddingBottom: '12px',
+                transition: 'none',
+                 '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.08)' }
+            }
+        }
+    },
+    MuiAppBar: {
+        styleOverrides: {
+            root: { background: '#fff', color: '#111', borderBottom: '2px solid #111', boxShadow: 'none', position: 'static' }
+        }
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: { border: '2px solid #111', borderRadius: 0, boxShadow: '4px 4px 0px #111' }
+      }
+    },
+    MuiAlert: { // Style Alerts
+      styleOverrides: {
+        root: { borderRadius: 0, border: '2px solid #111' },
+        filled: { border: '2px solid #111' } // Ensure filled alerts also have border
+      }
+    },
+    MuiDivider: { // Style Dividers
+      styleOverrides: {
+        root: { borderBottomWidth: '2px', borderColor: '#111' }
+      }
+    }
+  }
+});
 
 function App() {
   const { user, login, logout } = useAuth();
@@ -177,146 +277,147 @@ function App() {
     setError('');
   };
 
-  const totalIncome = expenses
-    .filter(expense => expense.type === 'income')
-    .reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
-
-  const totalExpenses = expenses
-    .filter(expense => expense.type === 'expense')
-    .reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
-
+  const totalIncome = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const totalExpenses = expenses.filter(e => e.type === 'expense').reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const netBalance = totalIncome - totalExpenses;
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: 'background.default' }}>
-        <AppBar 
-          position="static" 
-          sx={{ background: 'linear-gradient(45deg, #1976d2 30%, #21CBF3 90%)' }}
-        >
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600, letterSpacing: 1 }}>
-              CashCast
-            </Typography>
-            {user ? (
-              <Button color="inherit" onClick={logout} startIcon={<LogoutIcon/>}>
-                Logout
-              </Button>
-            ) : (
-              <Typography sx={{ color: 'inherit' }}>Please log in</Typography>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <Box sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: 'background.default' }}>
+          <AppBar>
+            <Toolbar>
+              <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>CashCast</Typography>
+              {user ? (
+                <Button color="inherit" variant="outlined" onClick={logout} startIcon={<LogoutIcon/>}>Logout</Button>
+              ) : (
+                <Typography sx={{ fontWeight: 'bold' }}>Please log in</Typography>
+              )}
+            </Toolbar>
+          </AppBar>
+
+          <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+            <Dialog open={!user} fullWidth maxWidth="xs" PaperProps={{ elevation: 0 }}>
+              <DialogContent sx={{ border: 'none', boxShadow: 'none'}}>
+                {isLoginView ? (
+                  <Login onToggleForm={handleToggleForm} onSuccess={handleAuthSuccess} />
+                ) : (
+                  <Register onToggleForm={handleToggleForm} onSuccess={handleAuthSuccess} />
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {user && (
+              <>
+                {error && <Alert severity="error" variant="filled" sx={{ mb: 2 }}>{error}</Alert>}
+                {!isConnected && <Alert severity="warning" variant="filled" sx={{ mb: 2 }}>Server connection issue.</Alert>}
+                
+                {isLoading ? (
+                  <Typography>Loading expenses...</Typography>
+                ) : (
+                  <>
+                    <Calendar expenses={expenses} />
+                    
+                    <Paper sx={{ p: 3, mb: 3 }}> 
+                      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>Add New Item</Typography>
+                      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={3}><TextField label="Description" value={newExpense.description} onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))} fullWidth required disabled={!isConnected} /></Grid>
+                          <Grid item xs={12} sm={2}><TextField label="Amount" type="number" value={newExpense.amount} onChange={(e) => setNewExpense(prev => ({ ...prev, amount: e.target.value }))} fullWidth required inputProps={{ min: 0, step: 0.01 }} disabled={!isConnected} /></Grid>
+                          <Grid item xs={12} sm={2}><TextField label="Date" type="date" value={newExpense.date} onChange={(e) => setNewExpense(prev => ({ ...prev, date: e.target.value }))} fullWidth required InputLabelProps={{ shrink: true }} disabled={!isConnected} /></Grid>
+                          <Grid item xs={12} sm={3}>
+                              <TextField select label="Type" value={newExpense.type} onChange={(e) => setNewExpense(prev => ({ ...prev, type: e.target.value }))} fullWidth required disabled={!isConnected}>
+                                <MenuItem value="expense">Expense</MenuItem>
+                                <MenuItem value="income">Income</MenuItem>
+                              </TextField>
+                           </Grid>
+                           <Grid item xs={12} sm={2} sx={{ display: 'flex' }}>
+                              <Button 
+                                type="submit" 
+                                variant="contained" 
+                                fullWidth 
+                                color="primary" 
+                                disabled={!isConnected}
+                                sx={{ height: '100%' }}
+                              >
+                                Add
+                              </Button>
+                           </Grid>
+                        </Grid>
+                      </Box>
+                    </Paper>
+
+                    <Paper sx={{ p: 3 }}>
+                      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>Items</Typography>
+                      <List sx={{ p: 0 }}> 
+                        {expenses.map((expense) => (
+                          <ListItem 
+                            key={expense.id} 
+                            disablePadding  
+                            secondaryAction={
+                              <IconButton 
+                                edge="end" 
+                                aria-label="delete" 
+                                onClick={() => handleDelete(expense.id)} 
+                                disabled={!isConnected} 
+                                sx={{ mr: 1 }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            }
+                          >
+                            <ListItemText 
+                              sx={{ pl: 2 }}
+                              primary={expense.description}
+                              secondary={`$${(Number(expense.amount) || 0).toFixed(2)} - ${expense.date}`}
+                              primaryTypographyProps={{ fontWeight: 'bold' }}
+                              secondaryTypographyProps={{ 
+                                color: expense.type === 'income' ? theme.palette.success.main : theme.palette.error.main, 
+                                fontWeight: 'bold' 
+                              }}
+                            />
+                          </ListItem>
+                        ))}
+                        {expenses.length === 0 && (
+                          <ListItem disablePadding>
+                            <ListItemText sx={{ pl: 2 }} primary="No items yet." />
+                          </ListItem>
+                        )}
+                      </List>
+                      <Divider sx={{ my: 3 }} />
+
+                      <Grid container spacing={2} justifyContent="center">
+                        <Grid item xs={12} sm={4}>
+                          <Box sx={{ p: 2, border: '2px solid #111', bgcolor: theme.palette.success.main, color: '#fff', textAlign: 'center' }}>
+                            <Typography variant="overline" sx={{ fontWeight: 'bold' }}>Total Income</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>${totalIncome.toFixed(2)}</Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                          <Box sx={{ p: 2, border: '2px solid #111', bgcolor: theme.palette.error.main, color: '#fff', textAlign: 'center' }}>
+                            <Typography variant="overline" sx={{ fontWeight: 'bold' }}>Total Expenses</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>${totalExpenses.toFixed(2)}</Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                          <Box sx={{ p: 2, border: '2px solid #111', bgcolor: netBalance >= 0 ? theme.palette.info.main : theme.palette.warning.main, color: '#fff', textAlign: 'center' }}>
+                            <Typography variant="overline" sx={{ fontWeight: 'bold' }}>Net Balance</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>${netBalance.toFixed(2)}</Typography>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </>
+                )}
+              </>
             )}
-          </Toolbar>
-        </AppBar>
-
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-          <Dialog open={!user} fullWidth maxWidth="xs">
-            <DialogContent>
-              {isLoginView ? (
-                <Login onToggleForm={handleToggleForm} onSuccess={handleAuthSuccess} />
-              ) : (
-                <Register onToggleForm={handleToggleForm} onSuccess={handleAuthSuccess} />
-              )}
-            </DialogContent>
-          </Dialog>
-
-          {user && (
-            <>
-              {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-              {!isConnected && <Alert severity="warning" sx={{ mb: 2 }}>Server connection issue. Please ensure the backend is running.</Alert>}
-              
-              {isLoading ? (
-                <Typography>Loading expenses...</Typography>
-              ) : (
-                <>
-                  <Calendar expenses={expenses} />
-                  
-                  <Paper sx={{ p: 3, mb: 3, boxShadow: 3, transition: 'all 0.3s ease-in-out', '&:hover': { boxShadow: 6 } }}>
-                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mb: 3 }}>
-                      Add New Item
-                    </Typography>
-                    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={3}>
-                          <TextField label="Description" value={newExpense.description} onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))} fullWidth required placeholder="Enter item description" disabled={!isConnected} />
-                        </Grid>
-                        <Grid item xs={12} sm={2}>
-                          <TextField label="Amount" type="number" value={newExpense.amount} onChange={(e) => setNewExpense(prev => ({ ...prev, amount: e.target.value }))} fullWidth required inputProps={{ min: 0, step: 0.01 }} placeholder="Enter amount" disabled={!isConnected} />
-                        </Grid>
-                        <Grid item xs={12} sm={2}>
-                          <TextField label="Date" type="date" value={newExpense.date} onChange={(e) => setNewExpense(prev => ({ ...prev, date: e.target.value }))} fullWidth required InputLabelProps={{ shrink: true }} disabled={!isConnected} />
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <TextField select label="Type" value={newExpense.type} onChange={(e) => setNewExpense(prev => ({ ...prev, type: e.target.value }))} fullWidth required disabled={!isConnected}> 
-                            <MenuItem value="expense">Expense</MenuItem>
-                            <MenuItem value="income">Income</MenuItem>
-                          </TextField>
-                        </Grid>
-                        <Grid item xs={12} sm={2}>
-                          <Button type="submit" variant="contained" fullWidth color="primary" disabled={!isConnected}> Add </Button>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  </Paper>
-
-                  <Paper sx={{ p: 3, boxShadow: 3, transition: 'all 0.3s ease-in-out', '&:hover': { boxShadow: 6 } }}>
-                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mb: 3 }}>
-                      Items
-                    </Typography>
-                    <List>
-                      {expenses.map((expense) => (
-                        <ListItem 
-                          key={expense.id}
-                          secondaryAction={
-                            <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(expense.id)} disabled={!isConnected} sx={{ transition: 'all 0.2s ease-in-out', '&:hover': { color: 'error.main', transform: 'scale(1.1)' } }}>
-                              <DeleteIcon />
-                            </IconButton>
-                          }
-                          sx={{ borderBottom: '1px solid', borderColor: 'divider', transition: 'all 0.2s ease-in-out', '&:hover': { backgroundColor: 'action.hover' } }}
-                        >
-                          <ListItemText
-                            primary={expense.description}
-                            secondary={`Amount: $${(Number(expense.amount) || 0).toFixed(2)} - Date: ${expense.date}`}
-                            primaryTypographyProps={{ fontWeight: 500 }}
-                            secondaryTypographyProps={{
-                              color: expense.type === 'income' ? 'success.dark' : 'error.dark',
-                              fontWeight: 'bold'
-                            }}
-                          />
-                        </ListItem>
-                      ))}
-                      {expenses.length === 0 && <ListItem><ListItemText primary="No items yet." /></ListItem>}
-                    </List>
-                    <Divider sx={{ my: 3 }} />
-
-                    <Grid container spacing={2} justifyContent="center">
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ p: 2, bgcolor: 'success.light', color: 'success.contrastText', borderRadius: 1, textAlign: 'center', transition: 'all 0.2s ease-in-out', '&:hover': { transform: 'scale(1.03)', boxShadow: 2 } }}>
-                          <Typography variant="overline">Total Income</Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>${totalIncome.toFixed(2)}</Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ p: 2, bgcolor: 'error.light', color: 'error.contrastText', borderRadius: 1, textAlign: 'center', transition: 'all 0.2s ease-in-out', '&:hover': { transform: 'scale(1.03)', boxShadow: 2 } }}>
-                          <Typography variant="overline">Total Expenses</Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>${totalExpenses.toFixed(2)}</Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ p: 2, bgcolor: netBalance >= 0 ? 'info.light' : 'warning.light', color: netBalance >= 0 ? 'info.contrastText' : 'warning.contrastText', borderRadius: 1, textAlign: 'center', transition: 'all 0.2s ease-in-out', '&:hover': { transform: 'scale(1.03)', boxShadow: 2 } }}>
-                          <Typography variant="overline">Net Balance</Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>${netBalance.toFixed(2)}</Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  </Paper>
-                </>
-              )}
-            </>
-          )}
-        </Container>
-      </Box>
-    </LocalizationProvider>
+          </Container>
+        </Box>
+      </LocalizationProvider>
+    </ThemeProvider>
   );
 }
 
 export default App;
+
