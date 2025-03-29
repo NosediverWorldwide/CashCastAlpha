@@ -4,6 +4,11 @@ import React from 'react';
 // Helper to parse date safely
 export const safeParseISO = (dateString) => {
   try {
+    // Split the date string and reconstruct to ensure no timezone shifts
+    if (typeof dateString === 'string' && dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+      return new Date(year, month - 1, day);
+    }
     return parseISO(dateString);
   } catch (error) {
     console.error("Invalid date format:", dateString, error);

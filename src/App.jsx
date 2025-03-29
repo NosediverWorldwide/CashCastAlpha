@@ -5,7 +5,8 @@ import {
   Alert,
   Box,
   ThemeProvider,
-  CssBaseline
+  CssBaseline,
+  Paper
 } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -17,6 +18,8 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import Calendar from './components/Calendar';
 import LoginDialog from './components/LoginDialog';
+import { calculateAvailableToSpend } from './components/CalendarUtils.jsx';
+import TransactionsNew from '../app/components/TransactionsNew';
 
 // Import theme
 import theme from './theme';
@@ -28,6 +31,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoginView, setIsLoginView] = useState(true);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   useEffect(() => {
     if (user) {
@@ -163,7 +167,23 @@ function App() {
                   <Typography>Loading expenses...</Typography>
                 ) : (
                   <>
-                    <Calendar expenses={expenses} />
+                    {/* Available money to spend today section */}
+                    <Paper sx={{ p: 3, mb: 3, bgcolor: 'primary.light', border: '2px solid #111' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold', color: 'white' }}>
+                          Available money to spend today
+                        </Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white' }}>
+                          ${calculateAvailableToSpend(new Date(), expenses).toFixed(2)}
+                        </Typography>
+                      </Box>
+                    </Paper>
+
+                    <Calendar 
+                      expenses={expenses}
+                      currentMonth={currentMonth}
+                      onMonthChange={setCurrentMonth}
+                    />
                     
                     <ExpenseForm 
                       onSubmit={handleAddExpense} 
@@ -171,11 +191,11 @@ function App() {
                       user={user}
                     />
 
-                    <ExpenseList 
-                      expenses={expenses} 
-                      onDelete={handleDelete} 
-                      isConnected={isConnected}
-                      theme={theme}
+                    <TransactionsNew 
+                      transactions={expenses}
+                      currentMonth={currentMonth}
+                      onMonthChange={setCurrentMonth}
+                      onDelete={handleDelete}
                     />
                   </>
                 )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Paper, Typography, Box, IconButton } from '@mui/material';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths } from 'date-fns';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
@@ -16,23 +16,38 @@ import {
 } from './CalendarUtils.jsx';
 import CalendarCell, { cellStyle } from './CalendarCell';
 
-function Calendar({ expenses }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+function Calendar({ expenses, currentMonth, onMonthChange }) {
+  const [localCurrentDate, setLocalCurrentDate] = useState(currentMonth || new Date());
   const [expanded, setExpanded] = useState(true);
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December'];
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const firstDayOfMonth = startOfMonth(currentDate);
-  const lastDayOfMonth = endOfMonth(currentDate);
+  // Sync with external currentMonth if provided
+  useEffect(() => {
+    if (currentMonth && onMonthChange) {
+      setLocalCurrentDate(currentMonth);
+    }
+  }, [currentMonth]);
+
+  const firstDayOfMonth = startOfMonth(localCurrentDate);
+  const lastDayOfMonth = endOfMonth(localCurrentDate);
   const daysInMonth = eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth });
 
   const handlePrevMonth = () => {
-    setCurrentDate(subMonths(currentDate, 1));
+    const newDate = subMonths(localCurrentDate, 1);
+    setLocalCurrentDate(newDate);
+    if (onMonthChange) {
+      onMonthChange(newDate);
+    }
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(addMonths(currentDate, 1));
+    const newDate = addMonths(localCurrentDate, 1);
+    setLocalCurrentDate(newDate);
+    if (onMonthChange) {
+      onMonthChange(newDate);
+    }
   };
 
   const toggleExpanded = () => {
@@ -65,7 +80,7 @@ function Calendar({ expenses }) {
           <IconButton onClick={handlePrevMonth} size="small">
             <ArrowBackIosNewIcon fontSize="inherit" />
           </IconButton>
-          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          {monthNames[localCurrentDate.getMonth()]} {localCurrentDate.getFullYear()}
           <IconButton onClick={handleNextMonth} size="small">
             <ArrowForwardIosIcon fontSize="inherit" />
           </IconButton>
@@ -132,7 +147,7 @@ function Calendar({ expenses }) {
               <CalendarCell
                 key={date.toISOString()}
                 date={date}
-                currentDate={currentDate}
+                currentDate={localCurrentDate}
                 dayExpenses={dayExpenses}
                 dailyTotal={dailyTotal}
                 displayAmount={displayAmount}
