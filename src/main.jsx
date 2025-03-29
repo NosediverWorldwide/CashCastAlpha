@@ -2,27 +2,12 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import { AuthProvider } from './contexts/AuthContext'
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>,
 )
