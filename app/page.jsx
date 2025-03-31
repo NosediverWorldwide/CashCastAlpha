@@ -4,81 +4,207 @@ import { useState, useEffect } from 'react';
 import TransactionsNew from './components/TransactionsNew';
 import Calendar from '../src/components/Calendar';
 import { calculateAvailableToSpend } from '../src/components/CalendarUtils';
-import { Paper, Typography, Box } from '@mui/material';
+import { Paper, Typography, Box, Container, Grid, Stack } from '@mui/material';
+import ExpenseForm from '../src/components/ExpenseForm';
+import { format } from 'date-fns';
 
 export default function Home() {
   const [expenses, setExpenses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [user, setUser] = useState({ token: 'demo-token' }); // Simplified user for demo
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Add refresh trigger state
 
+  // Function to refresh expenses data
+  const refreshExpenses = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/expenses');
+      if (!response.ok) throw new Error('Failed to fetch expenses');
+      const data = await response.json();
+      console.log(`Fetched ${data.length} expenses`);
+      
+      // Clean the descriptions before setting them in state
+      const cleanedExpenses = data.map(exp => ({
+        ...exp,
+        description: exp.description ? String(exp.description).replace(/0+$/, '') : exp.description
+      }));
+      
+      setExpenses(cleanedExpenses);
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Use effect for initial load and refreshes
   useEffect(() => {
-    const fetchExpenses = async () => {
+    let isMounted = true;
+    
+    const fetchData = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch('/api/expenses');
         if (!response.ok) throw new Error('Failed to fetch expenses');
         const data = await response.json();
-        setExpenses(data);
+        
+        if (isMounted) {
+          console.log(`Fetched ${data.length} expenses on refresh ${refreshTrigger}`);
+          console.log('Transaction data received:', JSON.stringify(data, null, 2));
+          
+          // Debug log for the description field
+          data.forEach(item => {
+            console.log(`Front-end received expense: ID=${item.id}, Description="${item.description}", Type=${typeof item.description}`);
+          });
+          
+          // Create a new expenses array with cleaned descriptions
+          const cleanedExpenses = data.map(exp => ({
+            ...exp,
+            description: exp.description ? String(exp.description).replace(/0+$/, '') : exp.description
+          }));
+          
+          setExpenses(cleanedExpenses);
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error('Error fetching expenses:', error);
-      } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
+    
+    fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshTrigger]); // Trigger refresh when this state changes
 
-    fetchExpenses();
-  }, []);
-
-  const handleDelete = async (id) => {
+  const handleAddExpense = async (newExpense) => {
     try {
-      const response = await fetch(`/api/expenses/${id}`, {
-        method: 'DELETE'
+      // Make sure we're passing all recurring transaction properties
+      const expenseData = {
+        ...newExpense,
+        isRecurring: newExpense.isRecurring || false,
+        recurringFrequency: newExpense.isRecurring ? newExpense.recurringFrequency : null
+      };
+      
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(expenseData)
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to delete transaction');
+        throw new Error('Failed to add transaction');
       }
+
+      // Instead of reloading the page, trigger a refresh of the expenses data
+      await refreshExpenses();
       
-      // Update local state to remove the deleted transaction
-      setExpenses(expenses.filter(expense => expense.id !== id));
+      return true;
     } catch (error) {
-      console.error('Error deleting transaction:', error);
+      console.error('Error adding transaction:', error);
+      return false;
+    }
+  };
+
+  const handleDeleteTransaction = async (transactionId, isRecurring) => {
+    try {
+      console.log(`Page: Attempting to delete transaction ${transactionId}, isRecurring: ${isRecurring}`);
+      
+      // If it's a recurring transaction, add the deleteAll query parameter
+      const url = isRecurring 
+        ? `/api/expenses/${transactionId}?deleteAll=true`
+        : `/api/expenses/${transactionId}`;
+
+      console.log(`Page: Sending DELETE request to ${url}`);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Page: Delete response not OK:', errorData);
+        throw new Error(errorData.error || 'Failed to delete transaction');
+      }
+
+      const responseData = await response.json();
+      console.log('Page: Delete successful, server response:', responseData);
+      
+      // Immediately update the local state
+      if (isRecurring) {
+        // For recurring transactions, remove all transactions with the same recurring_group_id
+        const targetTransaction = expenses.find(exp => exp.id === transactionId);
+        if (targetTransaction?.recurring_group_id) {
+          setExpenses(prevExpenses => 
+            prevExpenses.filter(exp => exp.recurring_group_id !== targetTransaction.recurring_group_id)
+          );
+        }
+      } else {
+        // For single transactions, just remove the one with matching ID
+        setExpenses(prevExpenses => 
+          prevExpenses.filter(exp => exp.id !== transactionId)
+        );
+      }
+
+      // Also trigger a refresh to ensure sync with server
+      await refreshExpenses();
+      
+      return true;
+    } catch (error) {
+      console.error('Page: Error deleting transaction:', error);
+      return false;
     }
   };
 
   return (
-    <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-      {isLoading ? (
-        <Typography>Loading...</Typography>
-      ) : (
-        <>
-          {/* Available money to spend today section */}
-          <Paper sx={{ p: 3, mb: 3, bgcolor: 'primary.light', border: '2px solid #111' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold', color: 'white' }}>
-                Available money to spend today
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white' }}>
-                ${calculateAvailableToSpend(new Date(), expenses).toFixed(2)}
-              </Typography>
-            </Box>
-          </Paper>
+    <div className="app-container">
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
+        <h1 style={{ marginBottom: '2rem', fontSize: '2.5rem', textAlign: 'center' }}>Cash Cast</h1>
+        
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={4}>
+            <Stack spacing={3}>
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 3, 
+                  border: '2px solid #111',
+                  borderRadius: 0,
+                  boxShadow: '4px 4px 0px #111',
+                }}
+              >
+                <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  Current Month
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                  {format(currentMonth, 'MMMM yyyy')}
+                </Typography>
+              </Paper>
+              
+              <ExpenseForm 
+                onSubmit={handleAddExpense} 
+              />
+            </Stack>
+          </Grid>
           
-          {/* Calendar component */}
-          <Calendar 
-            expenses={expenses} 
-            currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
-          />
-          
-          {/* Transactions component with month filtering */}
-          <TransactionsNew 
-            transactions={expenses} 
-            currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
-            onDelete={handleDelete}
-          />
-        </>
-      )}
-    </main>
+          <Grid item xs={12} md={8}>
+            <TransactionsNew 
+              transactions={expenses}
+              currentMonth={currentMonth}
+              onMonthChange={setCurrentMonth}
+              onDeleteTransaction={handleDeleteTransaction}
+            />
+          </Grid>
+        </Grid>
+      </Container>
+    </div>
   );
 } 

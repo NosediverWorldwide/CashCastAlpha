@@ -10,36 +10,49 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in on mount
     const token = localStorage.getItem('token');
     const username = localStorage.getItem('username');
-    if (token && username) {
-      // Verify session with server
-      fetch('/api/expenses', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+    
+    const verifySession = async () => {
+      try {
+        if (!token || !username) {
+          console.log('No stored credentials found');
+          setLoading(false);
+          return;
         }
-      })
-      .then(response => {
+        
+        console.log('Verifying stored session');
+        const response = await fetch('/api/expenses', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         if (response.ok) {
+          console.log('Session verified successfully');
           setUser({ token, username });
         } else {
-          // Session is invalid or expired
+          console.warn('Session verification failed, clearing stored credentials');
           localStorage.removeItem('token');
           localStorage.removeItem('username');
         }
-      })
-      .catch(() => {
-        // Server error or no connection
+      } catch (error) {
+        console.error('Session verification error:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('username');
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
-    } else {
-      setLoading(false);
-    }
+      }
+    };
+    
+    verifySession();
   }, []);
 
   const login = (token, username) => {
+    if (!token || !username) {
+      console.error('Invalid login data - missing token or username');
+      return;
+    }
+    
+    console.log('Storing session data');
     localStorage.setItem('token', token);
     localStorage.setItem('username', username);
     setUser({ token, username });
@@ -48,16 +61,26 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     if (user?.token) {
       try {
-        await fetch('/api/auth/logout', {
+        console.log('Sending logout request');
+        const response = await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${user.token}`
           }
         });
+        
+        if (response.ok) {
+          console.log('Logout successful');
+        } else {
+          console.warn('Logout request failed, but continuing with local logout');
+        }
       } catch (error) {
         console.error('Error logging out:', error);
       }
     }
+    
+    console.log('Clearing session data');
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     setUser(null);

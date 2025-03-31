@@ -3,16 +3,13 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
   Paper,
   Box,
   Divider,
   Grid
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 
-function ExpenseList({ expenses, onDelete, isConnected, theme }) {
+function ExpenseList({ expenses, isConnected, theme }) {
   // Calculate totals
   const totalIncome = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const totalExpenses = expenses.filter(e => e.type === 'expense').reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -25,24 +22,7 @@ function ExpenseList({ expenses, onDelete, isConnected, theme }) {
         {expenses.map((expense) => (
           <ListItem 
             key={expense.id} 
-            disablePadding  
-            secondaryAction={
-              <IconButton 
-                edge="end" 
-                aria-label="delete" 
-                onClick={() => onDelete(expense.id)} 
-                disabled={!isConnected} 
-                sx={{ 
-                  mr: 1,
-                  transition: 'color 0.2s',
-                  '&:hover': {
-                    color: '#f44336' // Red color on hover
-                  }
-                }}
-              >
-                <DeleteIcon />
-              </IconButton>
-            }
+            disablePadding
           >
             <ListItemText 
               sx={{ pl: 2 }}

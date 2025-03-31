@@ -16,13 +16,16 @@ function Login({ onToggleForm }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
+      console.log('Sending login request...');
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -31,15 +34,42 @@ function Login({ onToggleForm }) {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      console.log('Login response status:', response.status);
+      
+      let data;
+      try {
+        const text = await response.text();
+        console.log('Raw response:', text);
+        
+        if (!text) {
+          console.error('Empty response from server');
+          throw new Error('Server returned an empty response');
+        }
+        
+        try {
+          data = JSON.parse(text);
+          console.log('Parsed response:', data);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error(`Invalid JSON response: ${text}`);
+        }
+      } catch (parseError) {
+        console.error('Response parsing error:', parseError);
+        throw new Error('Server response was not in the expected format');
+      }
 
       if (!response.ok) {
+        console.error('Login error response:', data);
         throw new Error(data.error || 'Login failed');
       }
 
+      console.log('Login successful:', data);
       login(data.token, data.username);
     } catch (error) {
-      setError(error.message);
+      console.error('Login error:', error);
+      setError(error.message || 'Failed to login. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -66,6 +96,7 @@ function Login({ onToggleForm }) {
                 fullWidth
                 required
                 autoFocus
+                disabled={isLoading}
               />
             </Grid>
             <Grid item xs={12}>
@@ -76,6 +107,7 @@ function Login({ onToggleForm }) {
                 onChange={(e) => setPassword(e.target.value)}
                 fullWidth
                 required
+                disabled={isLoading}
               />
             </Grid>
             <Grid item xs={12}>
@@ -84,8 +116,9 @@ function Login({ onToggleForm }) {
                 variant="contained"
                 fullWidth
                 color="primary"
+                disabled={isLoading}
               >
-                Login
+                {isLoading ? 'Logging in...' : 'Login'}
               </Button>
             </Grid>
           </Grid>
@@ -98,6 +131,7 @@ function Login({ onToggleForm }) {
               component="button"
               variant="body2"
               onClick={onToggleForm}
+              disabled={isLoading}
             >
               Register here
             </Link>

@@ -4,6 +4,12 @@ const { initializeDatabase } = require('./db');
 const authRoutes = require('./routes/authRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 
+// Ensure JWT_SECRET is set
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'your_jwt_secret_for_development';
+  console.log('Using default JWT_SECRET for development');
+}
+
 async function startServer() {
   // Initialize database
   const db = await initializeDatabase();
@@ -14,7 +20,16 @@ async function startServer() {
   
   // Middleware
   app.use(cors({
-    origin: 'http://localhost:5173', // Vite's default port
+    // Allow requests from any localhost origin during development
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (origin && (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'))) {
+        return callback(null, true);
+      } else {
+        return callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true

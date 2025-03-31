@@ -6,7 +6,8 @@ import {
   Box,
   ThemeProvider,
   CssBaseline,
-  Paper
+  Paper,
+  Button
 } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -107,32 +108,6 @@ function App() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!user || !user.token) {
-      setError('You must be logged in to delete items.');
-      return;
-    }
-    try {
-      const response = await fetch(`/api/expenses/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      setExpenses(prevExpenses => prevExpenses.filter(expense => expense.id !== id));
-      setIsConnected(true);
-    } catch (error) {
-      console.error('Error deleting expense:', error);
-      setError('Failed to delete expense. Please check your connection.');
-      setIsConnected(false);
-    }
-  };
-
   const handleToggleForm = () => {
     setIsLoginView(!isLoginView);
     setError('');
@@ -141,6 +116,61 @@ function App() {
   const handleAuthSuccess = (token, username) => {
     login(token, username);
     setError('');
+  };
+
+  const handleDeleteTransaction = async (transactionId, isRecurring) => {
+    try {
+      console.log(`App: Attempting to delete transaction ${transactionId}, isRecurring: ${isRecurring}`);
+      
+      // If it's a recurring transaction, add the deleteAll query parameter
+      const url = isRecurring 
+        ? `/api/expenses/${transactionId}?deleteAll=true`
+        : `/api/expenses/${transactionId}`;
+
+      console.log(`App: Sending DELETE request to ${url}`);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('App: Delete response not OK:', errorData);
+        throw new Error(errorData.error || 'Failed to delete transaction');
+      }
+
+      const responseData = await response.json();
+      console.log('App: Delete successful, server response:', responseData);
+      
+      // Immediately update the local state
+      if (isRecurring) {
+        // For recurring transactions, remove all transactions with the same recurring_group_id
+        const targetTransaction = expenses.find(exp => exp.id === transactionId);
+        if (targetTransaction?.recurring_group_id) {
+          setExpenses(prevExpenses => 
+            prevExpenses.filter(exp => exp.recurring_group_id !== targetTransaction.recurring_group_id)
+          );
+        }
+      } else {
+        // For single transactions, just remove the one with matching ID
+        setExpenses(prevExpenses => 
+          prevExpenses.filter(exp => exp.id !== transactionId)
+        );
+      }
+
+      // Also trigger a fetch to ensure sync with server
+      await fetchExpenses();
+      
+      return true;
+    } catch (error) {
+      console.error('App: Error deleting transaction:', error);
+      setError('Failed to delete transaction');
+      return false;
+    }
   };
 
   return (
@@ -195,7 +225,7 @@ function App() {
                       transactions={expenses}
                       currentMonth={currentMonth}
                       onMonthChange={setCurrentMonth}
-                      onDelete={handleDelete}
+                      onDeleteTransaction={handleDeleteTransaction}
                     />
                   </>
                 )}
