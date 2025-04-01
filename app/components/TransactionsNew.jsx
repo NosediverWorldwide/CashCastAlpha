@@ -192,8 +192,9 @@ function TransactionsNew({ transactions, currentMonth, onMonthChange, onDeleteTr
                   key={transaction.id} 
                   divider
                   sx={{
-                    '&:hover .delete-icon': {
-                      opacity: 1,
+                    position: 'relative',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)'
                     }
                   }}
                 >
@@ -250,19 +251,19 @@ function TransactionsNew({ transactions, currentMonth, onMonthChange, onDeleteTr
                       {transaction.type === 'income' ? '+' : '-'}${Math.abs(parseFloat(transaction.amount || 0)).toFixed(2)}
                     </Typography>
                     <IconButton
-                      className="delete-icon"
                       onClick={() => handleDelete(transaction.id, transaction.is_recurring === 1)}
-                      size="small"
+                      size={isMobile ? "medium" : "small"}
                       sx={{
-                        opacity: 0,
-                        transition: 'all 0.2s ease-in-out',
                         color: 'grey.500',
+                        transition: 'all 0.2s ease-in-out',
+                        padding: { xs: '8px', sm: '4px' },
                         '&:hover': {
                           color: 'error.main',
+                          backgroundColor: 'rgba(244, 67, 54, 0.08)'
                         }
                       }}
                     >
-                      <DeleteIcon fontSize="small" />
+                      <DeleteIcon fontSize={isMobile ? "medium" : "small"} />
                     </IconButton>
                   </Box>
                 </ListItem>

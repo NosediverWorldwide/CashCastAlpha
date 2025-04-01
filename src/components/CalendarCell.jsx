@@ -1,23 +1,29 @@
-import { Box, Typography, Tooltip, Fade } from '@mui/material';
-import { isToday, isSameMonth, format } from 'date-fns';
+import { Box, Tooltip, Typography } from '@mui/material';
+import { format } from 'date-fns';
 
 // Styles for calendar cells
 export const cellStyle = {
   p: 1,
-  height: '80px',
+  textAlign: 'center',
+  border: '2px solid #111',
+  borderRadius: 0,
+  minHeight: '80px',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'flex-start',
-  justifyContent: 'flex-start',
+  justifyContent: 'space-between',
   cursor: 'pointer',
-  border: '2px solid #111',
-  borderColor: '#111',
-  borderRadius: 0,
-  position: 'relative',
   transition: 'all 0.2s ease-in-out',
-  '&:hover': {
-    transform: 'translate(-2px, -2px)',
-    boxShadow: '4px 4px 0px #111',
+  '@media (hover: hover)': {
+    '&:hover': {
+      transform: 'scale(1.02)',
+      boxShadow: '2px 2px 5px rgba(0,0,0,0.2)',
+    }
+  },
+  '@media (hover: none)': {
+    '&:active': {
+      transform: 'scale(0.98)',
+      boxShadow: '1px 1px 3px rgba(0,0,0,0.2)',
+    }
   }
 };
 
@@ -29,59 +35,74 @@ function CalendarCell({
   displayAmount, 
   getTooltipContent, 
   isDateToday, 
-  getDayBackgroundColor 
+  getDayBackgroundColor,
+  onClick,
+  showTooltip,
+  isSelected
 }) {
-  return (
-    <Tooltip 
-      title={getTooltipContent(date, dayExpenses)}
-      arrow
-      placement="top"
-      TransitionComponent={Fade}
-      componentsProps={{
-        tooltip: {
-          sx: {
-            bgcolor: 'white',
-            color: 'text.primary',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-            border: '1px solid #ddd',
-            maxWidth: 'none',
-            '& .MuiTooltip-arrow': {
-              color: 'white',
-            },
-          },
+  const hasTransactions = dayExpenses.length > 0;
+  const tooltipContent = getTooltipContent(date, dayExpenses);
+  
+  const cell = (
+    <Box
+      onClick={onClick}
+      sx={{
+        ...cellStyle,
+        backgroundColor: getDayBackgroundColor(dayExpenses),
+        transform: isSelected ? 'scale(1.02)' : 'none',
+        boxShadow: isSelected ? '2px 2px 5px rgba(0,0,0,0.2)' : 'none',
+        border: isSelected ? '2px solid #1976d2' : '2px solid #111',
+        '@media (hover: hover)': {
+          '&:hover': {
+            transform: isSelected ? 'scale(1.02)' : 'scale(1.02)',
+            boxShadow: '2px 2px 5px rgba(0,0,0,0.2)',
+          }
         },
+        '@media (hover: none)': {
+          '&:active': {
+            transform: 'scale(0.98)',
+            boxShadow: '1px 1px 3px rgba(0,0,0,0.2)',
+          }
+        }
       }}
     >
-      <Box 
+      <Typography 
+        variant="body2" 
         sx={{ 
-          ...cellStyle,
-          backgroundColor: isToday(date) ? '#1976d2' : getDayBackgroundColor(dayExpenses),
-          opacity: isSameMonth(date, currentDate) ? 1 : 0.5
+          fontWeight: isDateToday(date) ? 'bold' : 'normal',
+          color: isDateToday(date) ? 'primary.main' : 'text.primary'
         }}
       >
+        {format(date, 'd')}
+      </Typography>
+      {hasTransactions && (
         <Typography 
-          variant="subtitle2" 
+          variant="body2" 
           sx={{ 
             fontWeight: 'bold',
-            color: isToday(date) ? 'white' : 'text.primary'
+            color: displayAmount >= 0 ? 'success.main' : 'error.main'
           }}
         >
-          {format(date, 'd')}
+          ${Math.abs(displayAmount).toFixed(2)}
         </Typography>
-        {(isToday(date) || dayExpenses.length > 0) && (
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontWeight: 'bold',
-              color: isToday(date) ? 'white' : (dailyTotal >= 0 ? 'success.dark' : 'error.dark')
-            }}
-          >
-            {isToday(date) ? `$${displayAmount.toFixed(2)}` : `$${dailyTotal.toFixed(2)}`}
-          </Typography>
-        )}
-      </Box>
-    </Tooltip>
+      )}
+    </Box>
   );
+
+  // Show tooltip for all days if showTooltip is true
+  return showTooltip ? (
+    <Tooltip 
+      title={tooltipContent}
+      arrow
+      placement="top"
+      enterDelay={200}
+      leaveDelay={200}
+      enterTouchDelay={0}
+      leaveTouchDelay={1500}
+    >
+      {cell}
+    </Tooltip>
+  ) : cell;
 }
 
 export default CalendarCell; 

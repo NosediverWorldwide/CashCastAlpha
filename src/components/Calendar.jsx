@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Paper, Typography, Box, IconButton, Tooltip, Fade } from '@mui/material';
+import { Paper, Typography, Box, IconButton, Tooltip, Fade, useTheme, useMediaQuery } from '@mui/material';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths } from 'date-fns';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -20,6 +20,17 @@ function Calendar({ expenses, currentMonth, onMonthChange }) {
   const [localCurrentDate, setLocalCurrentDate] = useState(currentMonth || new Date());
   const [expanded, setExpanded] = useState(true);
   const [show, setShow] = useState(true);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [firstDayOfMonth, setFirstDayOfMonth] = useState(startOfMonth(localCurrentDate));
+  const [lastDayOfMonth, setLastDayOfMonth] = useState(endOfMonth(localCurrentDate));
+  const [daysInMonth, setDaysInMonth] = useState(
+    eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth })
+  );
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December'];
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -29,7 +40,7 @@ function Calendar({ expenses, currentMonth, onMonthChange }) {
     if (currentMonth && onMonthChange) {
       setLocalCurrentDate(currentMonth);
     }
-  }, [currentMonth]);
+  }, [currentMonth, onMonthChange]);
 
   // Add effect to handle expenses updates with debounce
   useEffect(() => {
@@ -52,12 +63,6 @@ function Calendar({ expenses, currentMonth, onMonthChange }) {
       setShow(true);
     }
   }, [expenses, localCurrentDate]);
-
-  const [firstDayOfMonth, setFirstDayOfMonth] = useState(startOfMonth(localCurrentDate));
-  const [lastDayOfMonth, setLastDayOfMonth] = useState(endOfMonth(localCurrentDate));
-  const [daysInMonth, setDaysInMonth] = useState(
-    eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth })
-  );
 
   const handlePrevMonth = () => {
     const newDate = subMonths(localCurrentDate, 1);
@@ -83,6 +88,17 @@ function Calendar({ expenses, currentMonth, onMonthChange }) {
   const getTooltipWithAllExpenses = (date, dayExpenses) => {
     return getTooltipContent(date, dayExpenses, expenses);
   };
+
+  const handleDayClick = (date, hasTransactions) => {
+    if (isTablet && hasTransactions) {
+      setSelectedDay(selectedDay?.getTime() === date.getTime() ? null : date);
+    }
+  };
+
+  // If mobile, return null after all hooks are defined
+  if (isMobile) {
+    return null;
+  }
 
   return (
     <Fade in={show} timeout={300}>
@@ -119,9 +135,17 @@ function Calendar({ expenses, currentMonth, onMonthChange }) {
               transition: 'transform 0.3s ease-in-out',
               transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
               border: '2px solid #111',
-              '&:hover': {
-                backgroundColor: 'rgba(0,0,0,0.05)',
-                transform: expanded ? 'rotate(180deg) scale(1.1)' : 'rotate(0deg) scale(1.1)'
+              '@media (hover: hover)': {
+                '&:hover': {
+                  backgroundColor: 'rgba(0,0,0,0.05)',
+                  transform: expanded ? 'rotate(180deg) scale(1.1)' : 'rotate(0deg) scale(1.1)'
+                }
+              },
+              '@media (hover: none)': {
+                '&:active': {
+                  backgroundColor: 'rgba(0,0,0,0.1)',
+                  transform: expanded ? 'rotate(180deg) scale(0.95)' : 'rotate(0deg) scale(0.95)'
+                }
               }
             }}
           >
@@ -159,7 +183,14 @@ function Calendar({ expenses, currentMonth, onMonthChange }) {
 
             {/* Empty cells for days before the first of the month */}
             {Array.from({ length: firstDayOfMonth.getDay() }, (_, i) => (
-              <Box key={`empty-${i}`} sx={{ ...cellStyle, backgroundColor: 'background.paper' }} />
+              <Box 
+                key={`empty-${i}`} 
+                sx={{ 
+                  ...cellStyle, 
+                  backgroundColor: 'background.paper',
+                  border: '2px solid #e0e0e0'
+                }} 
+              />
             ))}
             
             {/* Days of the month */}
@@ -172,6 +203,9 @@ function Calendar({ expenses, currentMonth, onMonthChange }) {
                 displayAmount = calculateAvailableToSpend(date, expenses);
               }
               
+              const isSelected = selectedDay?.getTime() === date.getTime();
+              const hasTransactions = dayExpenses.length > 0;
+              
               return (
                 <CalendarCell
                   key={date.toISOString()}
@@ -183,6 +217,9 @@ function Calendar({ expenses, currentMonth, onMonthChange }) {
                   getTooltipContent={(date, expenses) => getTooltipWithAllExpenses(date, expenses)}
                   isDateToday={isToday}
                   getDayBackgroundColor={getDayBackgroundColor}
+                  onClick={() => handleDayClick(date, hasTransactions)}
+                  showTooltip={!isTablet || (isTablet && isSelected)}
+                  isSelected={isSelected}
                 />
               );
             })}

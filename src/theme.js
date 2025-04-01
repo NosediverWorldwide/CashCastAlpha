@@ -6,7 +6,7 @@ const theme = createTheme({
     mode: 'light',
     primary: { main: '#1976d2' },
     secondary: { main: '#dc004e' },
-    background: { default: '#f5f5f5', paper: '#ffffff' },
+    background: { default: '#fdfd96', paper: '#ffffff' },
     text: { primary: '#111111' },
     success: { main: '#4caf50' }, 
     error: { main: '#f44336' },

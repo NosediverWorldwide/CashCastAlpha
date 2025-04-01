@@ -69,10 +69,17 @@ export const calculateDayTotal = (dayExpenses) => {
 
 // Find next income date after the given date
 const findNextIncomeDate = (date, expenses) => {
+  console.log(`\nFinding next income date after ${date.toISOString()}`);
+  
   const futureIncomes = expenses
     .filter(expense => {
       const expenseDate = safeParseISO(expense.date);
-      return expense.type === 'income' && expenseDate && isAfter(expenseDate, date);
+      const isIncome = expense.type === 'income';
+      const isAfterDate = expenseDate && isAfter(expenseDate, date);
+      
+      console.log(`Expense: ${expense.description}, Date: ${expenseDate?.toISOString()}, Type: ${expense.type}, IsAfter: ${isAfterDate}`);
+      
+      return isIncome && isAfterDate;
     })
     .sort((a, b) => {
       const dateA = safeParseISO(a.date);
@@ -80,57 +87,66 @@ const findNextIncomeDate = (date, expenses) => {
       return compareAsc(dateA, dateB);
     });
   
-  return futureIncomes.length > 0 ? safeParseISO(futureIncomes[0].date) : null;
+  console.log('Future incomes found:', futureIncomes);
+  const nextDate = futureIncomes.length > 0 ? safeParseISO(futureIncomes[0].date) : null;
+  console.log('Next income date:', nextDate?.toISOString());
+  
+  return nextDate;
 };
 
 // Calculate what's available to spend on a given day
 export const calculateAvailableToSpend = (date, expenses) => {
-  if (!expenses || !Array.isArray(expenses) || expenses.length === 0) return 0;
-  
-  try {
-    // 1. Calculate running balance up to and including this date
-    const runningBalance = expenses
-      .filter(expense => {
-        try {
-          const expenseDate = safeParseISO(expense.date);
-          return expenseDate && (isBefore(expenseDate, date) || isSameDay(expenseDate, date));
-        } catch (error) {
-          console.error("Error in filter:", error);
-          return false;
-        }
-      })
-      .reduce((total, expense) => {
-        const amount = parseFloat(expense.amount || 0);
-        return total + (expense.type === 'income' ? amount : -amount);
-      }, 0);
-    
-    // 2. Find next income date
-    const nextIncomeDate = findNextIncomeDate(date, expenses);
-    
-    // 3. Sum future expenses between this date (exclusive) and next income (exclusive)
-    const futureExpensesSum = expenses
-      .filter(expense => {
-        try {
-          const expenseDate = safeParseISO(expense.date);
-          return (
-            expense.type === 'expense' && 
-            expenseDate && 
-            isAfter(expenseDate, date) && 
-            (!nextIncomeDate || isBefore(expenseDate, nextIncomeDate))
-          );
-        } catch (error) {
-          console.error("Error in future expenses filter:", error);
-          return false;
-        }
-      })
-      .reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
-    
-    // Available to spend = current balance minus upcoming expenses
-    return runningBalance - futureExpensesSum;
-  } catch (error) {
-    console.error("Error calculating available to spend:", error);
-    return 0;
+  console.log('Calculating available to spend for date:', date.toISOString());
+  console.log('All expenses:', expenses);
+
+  // Get all expenses up to the current date (inclusive)
+  const expensesUpToDate = expenses.filter(expense => 
+    expense.date <= date.toISOString().split('T')[0]
+  );
+  console.log('Expenses up to current date:', expensesUpToDate);
+
+  // Calculate running balance from these expenses
+  const runningBalance = expensesUpToDate.reduce((balance, expense) => {
+    if (expense.type === 'income') {
+      return balance + expense.amount;
+    } else {
+      return balance - expense.amount;
+    }
+  }, 0);
+  console.log('Running balance:', runningBalance);
+
+  // Find next income date
+  const nextIncomeDate = findNextIncomeDate(date, expenses);
+  console.log('Next income date:', nextIncomeDate);
+
+  if (!nextIncomeDate) {
+    console.log('No next income date found, returning running balance');
+    return runningBalance;
   }
+
+  // Get future expenses between current date (exclusive) and next income date (inclusive)
+  const futureExpenses = expenses.filter(expense => {
+    const expenseDate = expense.date;
+    return expenseDate > date.toISOString().split('T')[0] && 
+           expenseDate <= nextIncomeDate;
+  });
+  console.log('Future expenses until next income:', futureExpenses);
+
+  // Sum up future expenses
+  const futureExpensesSum = futureExpenses.reduce((sum, expense) => {
+    if (expense.type === 'expense') {
+      return sum + expense.amount;
+    }
+    return sum;
+  }, 0);
+  console.log('Sum of future expenses:', futureExpensesSum);
+
+  // Calculate available amount
+  // We don't add the next income amount since it's already included in the running balance
+  const availableAmount = runningBalance - futureExpensesSum;
+  console.log('Final available amount:', availableAmount);
+
+  return availableAmount;
 };
 
 // Get background color based on daily total
@@ -159,8 +175,14 @@ export const getTooltipContent = (date, dayExpenses, allExpenses) => {
     
     return (
       <div style={{ padding: '8px' }}>
-        <div style={{ fontWeight: 'bold', marginBottom: '8px', borderBottom: '1px solid #ddd', paddingBottom: '4px' }}>
-          Available to spend: ${availableAmount.toFixed(2)}
+        <div style={{ 
+          fontWeight: 'bold', 
+          marginBottom: '8px', 
+          borderBottom: '1px solid #ddd', 
+          paddingBottom: '4px',
+          color: availableAmount >= 0 ? 'success.main' : 'error.main'
+        }}>
+          Available to spend: ${Math.abs(availableAmount).toFixed(2)}
         </div>
         
         {dayExpenses && dayExpenses.length > 0 ? (
